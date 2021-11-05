@@ -1,0 +1,525 @@
+---
+title: "Analysis Approach for Assessing Textile Preferences on Net Use"
+author: "Hannah Koenker, Tropical Health"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    theme: cosmo
+    df_print: paged
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(include = TRUE)
+library(tidyverse)
+library(janitor)
+library(haven)
+library(survey)
+# install.packages("srvyr")
+library(srvyr)
+library(labelled)
+library(flextable)
+library(gtsummary)
+library(MatchIt)
+theme_set(theme_minimal())
+```
+
+```{r color-setup}
+brandpal <- c(PermaNet = "#5587C9", Olyset = "#C5362F", Interceptor = "#7DAA33", Duranet = "#00A9E0", Serena = "#5587C9", unknown="#A9A9A9")
+
+textpal <- c(polyester = "#a6cee3", polyethylene = "#1f78b4", unknown = "#A9A9A9")
+```
+
+Insecticide-treated nets are the cornerstone of malaria control efforts worldwide. Over 2 billion ITNs have been distributed to people at risk of malaria over the past two decades. While most ITNs are used for malaria prevention, some gaps in use remain. Anecdotal reports and qualitative observations have indicated that in some areas, households may prefer softer polyester ITNs to ITNs made of polyethylene, which can have a 'harder' feel. 
+
+As a result, National Malaria Control Programs have expressed a desire to procure only ITNs of a specific textile for upcoming mass distribution campaigns. While the Global Fund procurement system allows for these types of requests, they are unable to guarantee that nets of a particular textile will be available for a specific campaign, due to global supply chain issues, ITN production timelines, and other manufacturing variables. 
+
+The Global Fund and WHO have advised countries wishing to procure nets of a single textile that this decision must be justified with data that support a significant increase in overall ITN use for one textile over another. 
+
+This document aims to provide an analysis framework for use by National Malaria Control Programs and their partners wishing to demonstrate differential use of ITNs due to the textile of the net, in order to justify procurement of ITNs of a specific textile (polyester or polyethylene).
+
+# Summary of Analysis Approach
+
+1.  Assess availability of data for analysis, including ITN variables and potential confounders
+2.  Determine whether existing data is sufficient for assessing the impact of textile on ITN use
+3.  If yes -- proceed with analysis
+4.  If no -- recommendations for next steps
+
+```{r read}
+df <- read_dta("BFHR7A_netfile.dta") %>% 
+  clean_names() %>% 
+  drop_na(netused, netsupply) %>% 
+  # change 1: convert haven_labelled variables to factors ----
+  mutate_if(haven::is.labelled, haven::as_factor) %>% 
+  # change 2: convert variable labels to variable names ----
+  #sjlabelled::label_to_colnames() %>% 
+  set_value_labels(textile = c("Polyester" = 1, "Polyethylene" = 2, "Polypropylene" = 3, "Unknown" = 4)) %>% 
+  mutate(wt = hv005/1000000) %>% 
+  mutate(netu = as.numeric(netused)) %>% 
+  mutate(netu = netu-1)
+
+
+
+dhs_design <- 
+  svydesign(
+		id = ~hv001 ,
+		data = df ,
+		weight = ~hv005 ,
+		strata = ~hv024
+	)
+```
+
+# Analysis Approach
+
+## Assess availability and suitability of data for the analysis
+
+1.  Download datasets for the most recent MIS or DHS or MICS from dhsprogram.com or mics.unicef.org
+
+2.  If using an MIS or DHS, the ITN roster data are contained within the household file (files ending with HR). This file must be reshaped to long format, generating a dataset with one row for each net in the household. MICS datasets have a separate ITN file (TN).
+
+3.  The outcome variable will be whether the ITN was used the previous night.
+
+4.  Many household-level factors influence ITN use, and must be controlled for in the analysis. These variables are nearly always standard within MIS/DHS/MICS:
+
+    -   region
+
+    -   time of year (month of the survey)
+
+    -   urban/rural setting
+
+    -   socioeconomic status
+
+    -   age of the net
+
+    -   the number of nets and people within the household - frequently categorized as household owning
+
+        -   'too few' ITNs,
+        -   'just right' number of ITNs, or
+        -   'too many' ITNs
+
+### Region
+
+```{r totaluse}
+
+# svymean( ~ netused , dhs_design ) 
+# svyby(~netused, ~hv024, dhs_design, svymean) 
+# svyciprop(~netused, dhs_design, method = "likelihood")
+# # glm_result <-
+# #   svyglm(netused ~ textile + hv024,
+# #          dhs_design)
+# 
+# dfsvy <- as_survey(dhs_design) 
+#   
+
+survey_design <-  df %>%
+  as_survey_design(ids = hv001, strata = hv024, weights = hv005)
+
+syv2 <-  survey_design %>% 
+  group_by(hv024) %>% 
+  summarize(netused = survey_mean(netu))
+# 
+# group_by(hv024) %>% 
+#   summarize(meann = survey_mean(netu))  %>% 
+#   
+
+# dhs_design %>% 
+#   group_by(hv024) %>% 
+#   summarize(meann = survey_mean(netused))  %>%
+#   ggplot(aes(y=meann,
+#              x=hv024,
+#              fill=hv024)) +
+#   geom_col()
+
+# in the above, no applicable method for 'group_by' applied to an object of class "c('survey.design2', 'survey.design')"
+
+# need to figure out how to include svy weights in the summarise command below:
+
+pnet <- function(column) {
+  column <- sym(column)
+  survey_design %>%
+    group_by(!!column) %>%
+    summarise(m = round(survey_mean(netu) * 100, 1)) %>%
+    ggplot(aes(
+      y = m,
+      x = !!column
+    )) +
+    geom_col() +
+    theme_minimal() +
+    geom_text(aes(label = m, vjust = -0.5)) +
+    labs(
+      y =  "",
+      x =  "",
+      fill =  "",
+      title =  "Percentage of nets used"
+    ) +
+    scale_y_continuous(limits = c(0, 100))
+}
+
+pnet("hv024") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+### Time of year (month of the survey - which can vary by region)
+
+```{r month}
+pnet("hv006") +
+  scale_x_discrete(limits = month.abb)
+```
+
+### Urban/Rural Status
+
+```{r urb}
+pnet("hv025")
+```
+
+### Socioeconomic status
+
+```{r ses}
+pnet("hv270")
+```
+
+### Age of the net
+
+```{r age}
+pnet("netagegr")
+```
+
+## Assess information about brands of ITN
+
+Next, we need to assess data available for the brand of ITN in the survey. From the brand we can determine whether the textile is polyester or polyethylene. A textile variable can be created using the following table as a guide. Note that in many datasets, the brand names of ITNs are spelled differently than below or may have misspellings. 
+
+```{r brandtextile, echo=FALSE, message=FALSE, warning=FALSE}
+btex <- read_csv("brand_textile.csv") %>% 
+  arrange(textile, brand)
+
+bt <- flextable(btex, cwidth = 3)
+bt
+```
+
+For how many nets is the brand information missing or unknown?
+
+```{r missingbrand}
+df <- df %>% 
+  mutate(brand = as.factor(brand)) %>% 
+  mutate(brand = fct_recode(brand, 
+         "unknown" = "dk brand", 
+         "unknown" = "",
+         "unknown" = "other brand", 
+         "unknown" = "other/don't know brand",
+         "Duranet" = "duranete",
+         "Interceptor" = "interceptor",
+         "Olyset" = "olyset",
+         "PermaNet" = "permanet",
+         "Serena" = "serena"
+         )) %>% 
+  mutate(brand = fct_infreq(brand)) %>% 
+  mutate(brand = fct_rev(brand)) 
+
+#  fct_collapse(brand, unknown = c("dk brand", "other brand", "other/don't know brand", NULL = "")) 
+
+# group_by(brand) %>% is not needed below
+# df %>% 
+#   ggplot(aes(y=brand,
+#              fill = brand)) +
+#   geom_bar() +
+#   theme_minimal() +
+#   scale_fill_manual(values = brandpal)
+
+# stacked...
+df %>%
+  ggplot(aes(x='',
+             fill = brand)) +
+  geom_bar(position = "fill") +
+  theme_minimal() +
+  coord_flip() +
+  scale_fill_manual(values = brandpal)
+
+
+```
+
+Is this missing/unknown data evenly distributed throughout the country? We can see below that in the Centre Ouest region, the majority of nets have an unknown brand.
+
+```{r brandunknown_region}
+df %>%
+  group_by(hv024) %>% 
+  ggplot(aes(x=hv024,
+             fill = brand)) +
+  geom_bar(position = "fill") +
+  theme_minimal() +
+  coord_flip() +
+  scale_fill_manual(values = brandpal)
+```
+
+As a result, the majority of nets in Centre Ouest will also have an unknown textile. What else do you notice? Were nets of different textiles distributed evenly throughout the country? Were they concentrated in certain regions?
+
+```{r textile_ov_region}
+df %>% 
+  group_by(hv024) %>% 
+    ggplot(aes(x=hv024,
+             fill = textile)) +
+  geom_bar(position = "fill") +
+  theme_minimal() +
+  coord_flip() +
+  scale_fill_manual(values = textpal, na.value = "#A9A9A9") +
+  labs(y =  "",
+       x =  "",
+       fill =  "",
+       title =  "Net Textiles")
+                      
+
+```
+
+## Assess the distribution of textiles across co-variates
+
+```{r textile_over}
+# Not sure if one can facet over different variables, but let's make a function instead for now:
+# not sure how to integrate the 'column' label into the title
+
+textile_over <- function(column) {
+  column <- sym(column)
+  df %>%
+    group_by(!!column) %>%
+    ggplot(aes(x = !!column,
+               fill = textile)) +
+    geom_bar(position = "fill") +
+    theme_minimal() +
+    coord_flip() +
+    scale_fill_manual(values = textpal, na.value = "#A9A9A9") +
+    labs(
+      y =  "",
+      x =  "",
+      fill =  "",
+      title =  "Net Textiles"
+    )
+}
+
+```
+
+Are nets of different textiles evenly spread across socioeconomic groups?
+
+```{r textile_over_ses}
+textile_over("hv270")
+
+```
+
+Are nets of different textiles evenly spread across urban/rural settings?
+
+```{r textile_over_urb}
+textile_over("hv025")
+
+```
+
+Are nets of a certain textile uniformly older than the other textile? For example, if most nets in the last campaign were polyester, and nets from the campaign before that were polyethylene, we would expect to see differences in net use due to the age of the net (older nets are worn out, and used less), which would be confounded with the textile.
+
+```{r textile_over_age}
+textile_over("netagegr")
+```
+
+Are nets of different textiles evenly represented across the months the survey was conducted?
+
+```{r textile_over_month}
+textile_over("hv006")
+```
+
+Are nets of different textiles evenly represented across household net supply?
+
+```{r textile_over_supply}
+textile_over("netsupply")
+```
+
+## Assess distribution of textiles within households
+
+What proportion of households own nets of both textiles? Are households that own both types different from households that own only one type? Larger, smaller, urban, rural, etc?
+
+```{r within_hh}
+
+```
+
+# Assess the overall proportion of nets of different textiles that were used the previous night
+
+Once we have reviewed the availability of the data and the patterns of net use and distribution of textile across different covariates, we are ready to look at how many nets were used the previous night, stratifying by textile. This is our overall programmatic indication of differences in net use due to textile -- although it does not (yet) adjust for covariates. If there is not a big difference in the proportion of nets used the previous night by textile, it is unlikely to be worth the logistical challenges (including potential delays) of procuring one textile only.
+
+```{r use_tex_nums}
+usetex <- survey_design %>% 
+  group_by(textile) %>% 
+  summarise(m = round(survey_mean(netu)*100,1)) %>% 
+  pull(m)
+```
+
+We can see below that `r usetex[1]` percent of polyester nets were used the previous night, compared to `r usetex[2]` percent of polyethylene  nets. 
+
+```{r use_textile}
+# need error bars here 
+
+survey_design %>% 
+  group_by(textile) %>% 
+  summarise(m = round(survey_mean(netu)*100,1)) %>% 
+  ggplot(aes(y = m,
+             x = textile,
+             fill = textile)) +
+  geom_col() +
+  theme_minimal() +
+  geom_text(aes(label = m, vjust = -0.5)) +
+  labs(y =  "",
+       x =  "",
+       fill =  "",
+       title =  "Percentage of nets used") +
+  scale_y_continuous(limits = c(0, 100)) +
+  scale_fill_manual(values = textpal, na.value = "#A9A9A9") 
+```
+
+```{r fun_useover}
+
+survey_design %>%
+  group_by(hv024, textile) %>%
+  summarise(m = round(survey_mean(netu) * 100, 1)) %>%
+  ggplot(aes(y = m,
+             x = hv024,
+             fill = textile)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(
+    aes(
+      x = hv024,
+      ymin = m - m_se,
+      ymax = m + m_se
+    ),
+    width = 0.3,
+    color = "gray",
+    alpha = 0.5,
+    size = .75,
+    position = "dodge"
+  ) +
+  theme_minimal() +
+  labs(y =  "",
+       x =  "",
+       fill =  "",
+       title =  "Percentage of nets used") +
+  scale_y_continuous(limits = c(0, 100)) +
+  scale_fill_manual(values = textpal, na.value = "#A9A9A9") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# geom_text(aes(label = m, vjust = -0.5)) +
+
+use_over <- function(column) {
+  column <- sym(column)
+  survey_design %>%
+    group_by(!!column, textile) %>%
+    summarise(m = round(survey_mean(netu) * 100, 1)) %>%
+    ggplot(aes(
+      y = m,
+      x = !!column,
+      fill = textile
+    )) +
+    geom_col(position = "dodge") +
+    geom_errorbar(
+      aes(
+        x = !!column,
+        ymin = m - m_se,
+        ymax = m + m_se
+      ),
+      width = 0.3,
+      color = "gray",
+      alpha = 0.5,
+      size = .75,
+      position = "dodge"
+    ) +
+    theme_minimal() +
+    labs(
+      y =  "",
+      x =  "",
+      fill =  "",
+      title =  "Percentage of nets used"
+    ) +
+    scale_y_continuous(limits = c(0, 100)) +
+    scale_fill_manual(values = textpal, na.value = "#A9A9A9") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+```
+
+Does use of nets by textile look different over rural/urban?
+
+```{r useover_urban}
+use_over("hv025")
+```
+
+Does use of nets by textile look different over socioeconomic status?
+
+```{r useover_ses}
+use_over("hv270")
+```
+
+Does use of nets by textile look different over month of the year?
+
+```{r useover_month}
+use_over("hv006")
+```
+
+Does use of nets by textile look different over age of the net?
+
+```{r useover_netage}
+use_over("netagegr")
+```
+
+Does use of nets by textile look different over household net supply? We usually see that nets in households that have 'too many' nets are used less, overall. Is this the case here?
+
+```{r useover_supply}
+use_over("netsupply")
+```
+
+# Assessing the association between net use and textile, controlling for co-variates
+
+After reviewing the patterns of net use by textile and covariates, we can use generalized linear models to evaluate the associations between covariates and our outcome variable of whether a particular net was used the previous night. We can first assess covariates one by one in a univariate model.
+
+```{r univar}
+# build logistic regression model
+
+# Make dummies in a different dataset
+
+dm <- df %>%
+  select(netu, textile, netsupply, hv006, hv024, hv025, hv270, netagegr) %>%
+  mutate(supply = fct_recode(netsupply,
+                             "enough" = "just right",
+                             "enough" = "too many"))
+ 
+# mutate(pet = fct_recode(textile,  0 = 2)) %>%
+# Univariate
+
+dm %>%
+  select(netu, textile, supply, hv006, hv024, hv025, hv270, netagegr) %>%
+  tbl_uvregression(
+    method = glm,
+    y = netu,
+    method.args = list(family = binomial),
+    exponentiate = TRUE,
+    pvalue_fun = ~style_pvalue(.x, digits = 2)
+  ) 
+```
+
+Next, we can construct the multivariate model:
+
+```{r multivar}
+# Multivariate
+m1 <- glm(netu ~ textile + supply + hv006 + hv024 + hv025 +hv270 + netagegr, dm, family = binomial)
+# summary(m1)$coefficients
+tbl_regression(m1, exponentiate = TRUE)
+```
+
+What do you notice about the multivariate model results? Which covariates are significantly associated, and which ones have the largest reduction in odds ratio? Is the net textile significantly associated with the net having been used the previous night?
+
+If not, there is no evidence to suggest that the textile of the net makes a substantial difference in overall net use. 
+
+# Taking into account survey respondents preferences for nets of a particular textile
+
+Very few surveys ask respondents what textile of net they prefer, and even fewer ask respondents about the strength of this preference. If, however, data are available about 'stated preferences' (what respondents state as their preference), this can be assessed alongside the observed net use behavior. 
+
+In previous work on ITN preferences, a binary variable was constructed at the household level for whether the household preferred e.g. polyester nets. This variable was then included in the models shown earlier as a covariate. In many cases, the fact that a household preferred nets of a certain type was not associated with the outcome of net use. This could be because the preference was not the sole determining factor, or because the household had only nets of a different type available, and chose to use them (perhaps begrudgingly) rather than remain unprotected from malaria. 
+
+Stated preferences on their own should not be used to justify procurement of nets of a single textile; analysis of observed net use from survey datasets will provide the necessary information about how nets are used. However, where both types of information are available, they can be used in combination to assess the strength of these preferences relative to other determining factors.
+
+# Steps if data are not available
+
+If survey data are old, incomplete, or if recent mass distributions have involved only nets of a single textile and thus the net crop is highly unbalanced, countries may need to collect additional data and/or ensure that a mix of ITNs are distributed in future campaigns. 
