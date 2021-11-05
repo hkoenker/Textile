@@ -353,7 +353,7 @@ usetex <- survey_design %>%
 We can see below that `r usetex[1]` percent of polyester nets were used the previous night, compared to `r usetex[2]` percent of polyethylene  nets. 
 
 ```{r use_textile}
-# need error bars here 
+
 
 survey_design %>% 
   group_by(textile) %>% 
@@ -373,6 +373,8 @@ survey_design %>%
 ```
 
 ```{r fun_useover}
+
+# why are error bars not aligning with the col bars?
 
 survey_design %>%
   group_by(hv024, textile) %>%
