@@ -1,12 +1,12 @@
 ---
-title: "Untitled"
+title: "Test Translating Textile"
 description: |
-  A new article created using the Distill format.
+  English-French report on correlation of bednet textile and net use.
 author:
-  - name: Nora Jones 
+  - name: Hannah Koenker 
     url: https://example.com/norajones
-    affiliation: Spacely Sprockets
-    affiliation_url: https://example.com/spacelysprokets
+    affiliation: Tropical Health
+    affiliation_url: https://www.trophealth.com
 date: "`r Sys.Date()`"
 output: distill::distill_article
 ---
