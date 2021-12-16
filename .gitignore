@@ -6,3 +6,6 @@
 *.dta
 /doc
 /images
+*.docx
+*.html
+*.log
