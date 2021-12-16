@@ -1,3 +1,8 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
 title: "Propensity Score Matching for Assessing Textile Preferences on Net Use"
 author: "Hannah Koenker, Tropical Health"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
@@ -22,6 +27,8 @@ library(labelled)
 library(flextable)
 library(gtsummary)
 library(MatchIt)
+library(tableone)
+library(cobalt)
 theme_set(theme_minimal())
 ```
 
@@ -59,6 +66,12 @@ prs_df %>%
   facet_wrap(~used) +
   xlab("Probability of net being used the previous night") +
   theme_bw()
+
+logitPS <- -log(1/prs_df$pr_score - 1)
+# this is the logit of the propensity score
+.2*sd(logitPS) # suggested caliper in the literature - is 0.1012, which is fine per Ehsan Karim
+.1*sd(logitPS) # is 0.0506, too strict for our purposes. 0.20 can be acceptable for some.
+
 ```
 
 The next step is to create matched pairs of observations that have the same propensity score (net has the same probability of being used), but differ in whether they were used. 
@@ -74,14 +87,23 @@ df_nomiss <- dm %>%  # MatchIt does not allow missing values
 
 # since we have categorical variables, may want to use exact matching (with multiple matches?) and not 'nearest', which is for continuous variables. But this doesn't produce the distance variable.
 
+set.seed(123)
 mod_match <- matchit(netu ~ textile + supply + hv006 + hv024 + hv025 +hv270 + netagegr,
-                     method = "nearest", data = df_nomiss)
+                     method = "nearest", data = df_nomiss, caliper = .2*sd(logitPS), distance = "logit", replace = FALSE, ratio = 1)
 
-mod_match2 <- matchit(netu ~ textile + supply + hv006 + hv024 + hv025 +hv270 + netagegr,
-                     method = "nearest", data = df2_nomiss)
-summary(mod_match)
+# we can generate a match below with exact matching, but it can't be plotted with jitter or hist because there is no distance.
+# mod_match2 <- matchit(netu ~ textile + supply + hv006 + hv024 + hv025 +hv270 + netagegr, method = "exact", data = df_nomiss)
+
+summary(mod_match$distance)
+mod_match
+# summary(mod_match2)
 # plot(mod_match)
+
 plot(mod_match, type = 'jitter', interactive = FALSE)
+# plot(mod_match2, type = 'jitter')
+plot(mod_match, type = "hist")
+# plot(mod_match2, type = "hist")
+
 # plot above shows only a few matched treated units at the high end (.85+) with a lot of matched controls (all of them). Lots of unmatched treated units, below 0.85 propensity score. 
 
 dta_m <- match.data(mod_match)
@@ -91,17 +113,41 @@ dta_m %>%
   count(netu) %>% 
   flextable()
 
-mod_cem <- matchit(netu ~ textile + supply + hv006 + hv024 + hv025 +hv270 + netagegr,
-                     method = "cem", data = df_nomiss)
-                   
-mod_full <- matchit(netu ~ textile + supply + hv006 + hv024 + hv025 +hv270 + netagegr,
-                     method = "full", data = df_nomiss)
-plot(mod_full, type = 'jitter', interactive = FALSE)
-dta_full <- match.data(mod_full)
-dim(dta_full)
-dta_full %>% 
-  count(netu) %>% 
-  flextable()
+tab1m <- CreateTableOne(
+  vars = netuse_cov,
+  data = dta_m,
+  strata = "netu",
+  includeNA = FALSE,
+  test = TRUE,
+  smd = TRUE
+)
+tab1m
+
+smd.res <- ExtractSmd(tab1m)
+t(round(smd.res,2))
+# region is .28, not less than 0.1, so not successfully matched. netagegr also 0.13
+
+# Can get Variance Ratios
+baltab.res <-  bal.tab(x = mod_match, 
+                       data = prs_df,
+                       treat = dm$textile,
+                       disp.v.ratio = TRUE)
+baltab.res$Balance$V.Ratio.Adj
+# lots of NAs.
+
+
+# A different method
+# mod_cem <- matchit(netu ~ textile + supply + hv006 + hv024 + hv025 +hv270 + netagegr,
+#                      method = "cem", data = df_nomiss)
+#                    
+# mod_full <- matchit(netu ~ textile + supply + hv006 + hv024 + hv025 +hv270 + netagegr,
+#                      method = "full", data = df_nomiss)
+# plot(mod_full, type = 'jitter', interactive = FALSE)
+# dta_full <- match.data(mod_full)
+# dim(dta_full)
+# dta_full %>% 
+#   count(netu) %>% 
+#   flextable()
 
 ```
 
