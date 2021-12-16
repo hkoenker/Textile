@@ -1,0 +1,39 @@
+---
+title: "Test Translation Webpage"
+author: "Hannah Koenker"
+date: "12/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+
+# The main title of the document won’t be translated here, but we can include a heading for each tab which will be translated. To achieve this we need to use HTML heading tags e.g. <h1> as if we try to use standard R Markdown # this will break the tabbing.
+```
+
+---
+title: "Main title"
+---
+
+# Language {.tabset .tabset-dropdown}
+
+## English
+
+<h1>English Title</h1>
+
+Plot of random points
+
+```{r, echo=FALSE}
+plot(runif(10), runif(10), main = "Random points")
+```
+
+## French
+
+<h1>Titre Français</h1>
+
+Tracé de points aléatoires
+
+```{r, echo=FALSE}
+plot(runif(10), runif(10), main = "Points aléatoires")
+```
