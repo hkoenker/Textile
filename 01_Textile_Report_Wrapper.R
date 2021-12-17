@@ -56,7 +56,7 @@ purrr::walk(textile_cty_list, function(file_info) {
   country <- file_info$country
   rmarkdown::render(
     "05_Textile_Results_Template.Rmd",
-    output_file = paste0("doc/",country, "_Textile_Report.html"),
+    output_file = paste0("../TextileReports/files/",country, "_Textile_Report.html"),
     params = list(netfile = netfile, country=country),
     envir = parent.frame())
 })

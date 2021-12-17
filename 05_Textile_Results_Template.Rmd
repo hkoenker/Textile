@@ -3,6 +3,10 @@ author: "Hannah Koenker, Tropical Health"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
+    toc: TRUE
+    toc_depth: 2
+    toc_float: TRUE
+    number_sections: TRUE
     fig_width: 6
     fig_height: 4
 header-includes:
@@ -597,7 +601,9 @@ dm %>%
   ) 
 ```
 
-
+ 
+ 
+ 
 Next, we can construct the multivariate model. When controlling for background factors, is textile associated with significant differences in a net being used?
 
 
