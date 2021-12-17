@@ -2,13 +2,13 @@
 author: "Hannah Koenker, Tropical Health"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
+  html_document:
+    fig_width: 6
+    fig_height: 4
   pdf_document:
     fig_width: 5
     fig_height: 3
     latex_engine: xelatex
-  html_document:
-    fig_width: 6
-    fig_height: 4
 mainfont: "Times New Roman"
 monofont: "Monaco"
 params: 
@@ -74,10 +74,10 @@ df <- read_dta("BJHR71_netfile.dta") %>%
   clean_names() %>% 
   drop_na(netused, netsupply) %>% 
   # change 1: convert haven_labelled variables to factors ----
-  mutate_if(haven::is.labelled, haven::as_factor) %>% 
+  # mutate_if(haven::is.labelled, haven::as_factor) %>% 
   # change 2: convert variable labels to variable names ----
   #sjlabelled::label_to_colnames() %>% 
-  set_value_labels(textile = c("Polyester" = 1, "Polyethylene" = 2, "Polypropylene" = 3, "Unknown" = 4)) %>% 
+ # set_value_labels(textile = c("Polyester" = 1, "Polyethylene" = 2, "Polypropylene" = 3, "Unknown" = 4)) %>% 
   mutate(wt = hv005/1000000,
          netu = as.numeric(netused),
          netu = netu-1) 

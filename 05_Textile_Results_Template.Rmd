@@ -2,13 +2,6 @@
 author: "Hannah Koenker, Tropical Health"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  pdf_document:
-    fig_width: 5
-    fig_height: 3
-    latex_engine: xelatex
-    toc: TRUE
-    toc_depth: 2
-    number_sections: TRUE
   html_document:
     fig_width: 6
     fig_height: 4
@@ -90,16 +83,17 @@ df <- read_dta(paste0("/Users/hannahkoenker/Dropbox/A DHS MIS Datasets/Analysis/
   clean_names() %>% 
   drop_na(netused, netsupply) %>% 
   # change 1: convert haven_labelled variables to factors ----
-  mutate_if(haven::is.labelled, haven::as_factor) %>% 
+   mutate_if(haven::is.labelled, haven::as_factor) %>% 
   # change 2: convert variable labels to variable names ----
   #sjlabelled::label_to_colnames() %>% 
-  set_value_labels(textile = c("Polyester" = 1, "Polyethylene" = 2, "Polypropylene" = 3, "Unknown" = 4)) %>% 
+ # set_value_labels(textile = c("Polyester" = 1, "Polyethylene" = 2, "Polypropylene" = 3, "Unknown" = 4)) %>% 
   mutate(wt = hv005/1000000,
          netu = as.numeric(netused),
          netu = netu-1) 
 
 # rename factor level here, if using mutate it will convert to character, no thanks.
 levels(df$hv024) <- gsub('[^ -~]', 'e', levels(df$hv024)) 
+levels(df$lbrand) <- gsub('[^ -~]', 'e', levels(df$lbrand)) 
 
 
 cty <- df$dataset[1]
@@ -224,45 +218,45 @@ df %>% count(brand)
 
 ```{r renamebrands}
 df <- df %>% 
-  mutate(brand = tolower(brand)) %>% 
+  # mutate(brand = tolower(brand)) %>% 
   mutate(brandclean = case_when(
-    grepl("dk", brand) ~ "unknown",
-    grepl("other", brand) ~ "unknown",
-    grepl("intercep", brand) ~ "Interceptor",
-    grepl("intersep", brand) ~ "Interceptor",
-    grepl("basf", brand) ~ "Interceptor",
-    grepl("olys", brand) ~ "Olyset",
-    grepl("olis", brand) ~ "Olyset",
-    grepl("olic", brand) ~ "Olyset",
-    grepl("perman", brand) ~ "PermaNet",
-    grepl("premane", brand) ~ "PermaNet",
-    grepl("sentry", brand) ~ "Royal Sentry",
-    grepl("dct", brand) ~ "Royal Sentry",
-    grepl("royal", brand) ~ "Royal Sentry",
-    grepl("guard", brand) ~ "Royal Guard",
-    grepl("dura", brand) ~ "Duranet",
-    grepl("protec", brand) ~ "NetProtect",
-    grepl("best", brand) ~ "NetProtect",
-    grepl("daw", brand) ~ "DawaPlus",
-    grepl("dava", brand) ~ "DawaPlus",
-    grepl("tana", brand) ~ "DawaPlus",
-    grepl("tuza", brand) ~ "TuzaNet",
-    grepl("safe", brand) ~ "SafeNet",
-    grepl("yahe", brand) ~ "Yahe",
-    grepl("yorko", brand) ~ "Yorkool",
-    grepl("safi", brand) ~ "SafiNet",
-    grepl("serena", brand) ~ "Serena",
-    grepl("tsara", brand) ~ "Tsara",
-    grepl("g2", brand) ~ "Interceptor G2",
-    grepl("super", brand) ~ "Super Moustiquaire",
-    grepl("joia", brand) ~ "Joia",
-    grepl("magnet", brand) ~ "MagNet",
-    grepl("mira", brand) ~ "MiraNet",
-    grepl("panda", brand) ~ "Panda Net",
-    grepl("veera", brand) ~ "Veeralin",
-    grepl("icon", brand) ~ "IconLife",
-    grepl("lifenet", brand) ~ "LifeNet",
-    grepl("life net", brand) ~ "LifeNet",
+    grepl("dk", lbrand) ~ "unknown",
+    grepl("other", lbrand) ~ "unknown",
+    grepl("intercep", lbrand) ~ "Interceptor",
+    grepl("intersep", lbrand) ~ "Interceptor",
+    grepl("basf", lbrand) ~ "Interceptor",
+    grepl("olys", lbrand) ~ "Olyset",
+    grepl("olis", lbrand) ~ "Olyset",
+    grepl("olic", lbrand) ~ "Olyset",
+    grepl("perman", lbrand) ~ "PermaNet",
+    grepl("premane", lbrand) ~ "PermaNet",
+    grepl("sentry", lbrand) ~ "Royal Sentry",
+    grepl("dct", lbrand) ~ "Royal Sentry",
+    grepl("royal", lbrand) ~ "Royal Sentry",
+    grepl("guard", lbrand) ~ "Royal Guard",
+    grepl("dura", lbrand) ~ "Duranet",
+    grepl("protec", lbrand) ~ "NetProtect",
+    grepl("best", lbrand) ~ "NetProtect",
+    grepl("daw", lbrand) ~ "DawaPlus",
+    grepl("dava", lbrand) ~ "DawaPlus",
+    grepl("tana", lbrand) ~ "DawaPlus",
+    grepl("tuza", lbrand) ~ "TuzaNet",
+    grepl("safe", lbrand) ~ "SafeNet",
+    grepl("yahe", lbrand) ~ "Yahe",
+    grepl("yorko", lbrand) ~ "Yorkool",
+    grepl("safi", lbrand) ~ "SafiNet",
+    grepl("serena", lbrand) ~ "Serena",
+    grepl("tsara", lbrand) ~ "Tsara",
+    grepl("g2", lbrand) ~ "Interceptor G2",
+    grepl("super", lbrand) ~ "Super Moustiquaire",
+    grepl("joia", lbrand) ~ "Joia",
+    grepl("magnet", lbrand) ~ "MagNet",
+    grepl("mira", lbrand) ~ "MiraNet",
+    grepl("panda", lbrand) ~ "Panda Net",
+    grepl("veera", lbrand) ~ "Veeralin",
+    grepl("icon", lbrand) ~ "IconLife",
+    grepl("lifenet", lbrand) ~ "LifeNet",
+    grepl("life net", lbrand) ~ "LifeNet",
     ))
 ```
 

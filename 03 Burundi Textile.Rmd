@@ -2,11 +2,9 @@
 author: "Hannah Koenker, Tropical Health"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  word_document: default
   html_document:
     theme: cosmo
     df_print: paged
-  pdf_document: default
 params: 
   country: "Burundi"
 title: "Analysis Approach for Assessing Textile Preferences on Net Use: `r params$country`"
@@ -68,10 +66,10 @@ df <- read_dta("BUHR70_netfile.dta") %>%
   clean_names() %>% 
   drop_na(netused, netsupply) %>% 
   # change 1: convert haven_labelled variables to factors ----
-  mutate_if(haven::is.labelled, haven::as_factor) %>% 
+  # mutate_if(haven::is.labelled, haven::as_factor) %>% 
   # change 2: convert variable labels to variable names ----
   #sjlabelled::label_to_colnames() %>% 
-  set_value_labels(textile = c("Polyester" = 1, "Polyethylene" = 2, "Polypropylene" = 3, "Unknown" = 4)) %>% 
+ # set_value_labels(textile = c("Polyester" = 1, "Polyethylene" = 2, "Polypropylene" = 3, "Unknown" = 4)) %>% 
   mutate(wt = hv005/1000000) %>% 
   mutate(netu = as.numeric(netused)) %>% 
   mutate(netu = netu-1)
