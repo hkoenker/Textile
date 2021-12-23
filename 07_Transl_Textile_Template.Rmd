@@ -6,7 +6,7 @@ output:
     toc: TRUE
     toc_depth: 2
     toc_float: TRUE
-    number_sections: TRUE
+    number_sections: FALSE
     fig_width: 6
     fig_height: 4
 header-includes:
@@ -19,7 +19,7 @@ monofont: "Monaco"
 params: 
   country: Benin # default
   netfile: BJHR71_netfile.dta # default
-title: "Analysis Approach for Assessing Textile Preferences on Net Use: `r params$country`"
+title: "`r params$country`: Effect of textile on net use"
 editor_options:
   chunk_output_type: console
 ---
@@ -90,7 +90,7 @@ title: "Analysis Approach for Assessing Textile Preferences on Net Use: `r param
 
 ## English
 
-<h1>"Analysis Approach for Assessing Textile Preferences on Net Use: `r params$country`"</h1>
+<h1>Analysis Approach for Assessing Textile Preferences on Net Use: `r params$country`</h1>
 
 Insecticide-treated nets are the cornerstone of malaria control efforts worldwide. Over 2 billion ITNs have been distributed to people at risk of malaria over the past two decades. While most ITNs are used for malaria prevention, some gaps in use remain. Anecdotal reports and qualitative observations have indicated that in some areas, households may prefer softer polyester ITNs to ITNs made of polyethylene, which can have a 'harder' feel. 
 
@@ -188,11 +188,218 @@ pnet("hv024") +
 
 ```
     
+<h3>Time of year (month of the survey - which can vary by region)</h3>
+
+```{r month}
+pnet("hv006") +
+  scale_x_discrete(limits = month.abb)
+```
+
+<h3>Urban/Rural Status</h3>
+
+```{r urb}
+pnet("hv025")
+```
+
+<h3>Socioeconomic status</h3>
+
+```{r ses}
+pnet("hv270")
+```
+
+<h3>Age of the net</h3>
+
+```{r age}
+pnet("netagegr")
+```
+
+<h2>Assess information about brands of ITN</h2>
+
+Next, we need to assess data available for the brand of ITN in the survey. From the brand we can determine whether the textile is polyester or polyethylene. A textile variable can be created using the following table as a guide. Note that in many datasets, the brand names of ITNs are spelled differently than below or may have misspellings. 
+
+```{r brandtextile, echo=FALSE, message=FALSE, warning=FALSE}
+btex <- read_csv("brand_textile.csv") %>% 
+  arrange(textile, brand)
+
+bt <- flextable(btex, cwidth = 3)
+bt
+```
+
+For how many nets is the brand information missing or unknown?
+
+```{r countbrand, include=FALSE}
+
+## Need to modify code here to reflect brands in the dataset, or for it to work for any combo of brands
+df %>% count(brand) 
+
+```
+
+```{r renamebrands}
+df <- df %>% 
+  # mutate(brand = tolower(brand)) %>% 
+  mutate(brandclean = case_when(
+    grepl("dk", lbrand) ~ "unknown",
+    grepl("other", lbrand) ~ "unknown",
+    grepl("intercep", lbrand) ~ "Interceptor",
+    grepl("intersep", lbrand) ~ "Interceptor",
+    grepl("basf", lbrand) ~ "Interceptor",
+    grepl("olys", lbrand) ~ "Olyset",
+    grepl("olis", lbrand) ~ "Olyset",
+    grepl("olic", lbrand) ~ "Olyset",
+    grepl("perman", lbrand) ~ "PermaNet",
+    grepl("premane", lbrand) ~ "PermaNet",
+    grepl("sentry", lbrand) ~ "Royal Sentry",
+    grepl("dct", lbrand) ~ "Royal Sentry",
+    grepl("royal", lbrand) ~ "Royal Sentry",
+    grepl("guard", lbrand) ~ "Royal Guard",
+    grepl("dura", lbrand) ~ "Duranet",
+    grepl("protec", lbrand) ~ "NetProtect",
+    grepl("best", lbrand) ~ "NetProtect",
+    grepl("daw", lbrand) ~ "DawaPlus",
+    grepl("dava", lbrand) ~ "DawaPlus",
+    grepl("tana", lbrand) ~ "DawaPlus",
+    grepl("tuza", lbrand) ~ "TuzaNet",
+    grepl("safe", lbrand) ~ "SafeNet",
+    grepl("yahe", lbrand) ~ "Yahe",
+    grepl("yorko", lbrand) ~ "Yorkool",
+    grepl("safi", lbrand) ~ "SafiNet",
+    grepl("serena", lbrand) ~ "Serena",
+    grepl("tsara", lbrand) ~ "Tsara",
+    grepl("g2", lbrand) ~ "Interceptor G2",
+    grepl("super", lbrand) ~ "Super Moustiquaire",
+    grepl("joia", lbrand) ~ "Joia",
+    grepl("magnet", lbrand) ~ "MagNet",
+    grepl("mira", lbrand) ~ "MiraNet",
+    grepl("panda", lbrand) ~ "Panda Net",
+    grepl("veera", lbrand) ~ "Veeralin",
+    grepl("icon", lbrand) ~ "IconLife",
+    grepl("lifenet", lbrand) ~ "LifeNet",
+    grepl("life net", lbrand) ~ "LifeNet",
+    ))
+```
+
+``` {r checknames, include = FALSE}
+## Check to make sure you have all the brands recoded properly:
+  df %>% count(brandclean, brand) 
+
+df$brandclean[is.na(df$brandclean)] <- "missing"
+
+df <- df %>% 
+  mutate(brandclean = factor(brandclean)) %>% 
+        mutate(brandclean=fct_relevel(brandclean,"missing", after = Inf))
+  
+
+```
+
+
+``` {r missingplot}
+
+df %>%
+  ggplot(aes(x='',
+             fill = as.factor(brandclean))) +
+  geom_bar(position = "fill") +
+  coord_flip() +
+  scale_fill_manual(values = brandpal,
+                    limits=force,
+                    guide = guide_legend(reverse = TRUE)) +
+  labs(fill = "Brand",
+       x = "",
+       y = "")
+
+```
+
+Is this missing/unknown data evenly distributed throughout the country? 
+
+```{r brandunknown_region}
+df %>%
+  group_by(hv024) %>% 
+  ggplot(aes(x=hv024,
+             fill = brandclean)) +
+  geom_bar(position = "fill") +
+  coord_flip() +
+  scale_fill_manual(values = brandpal,
+                    limits=force,
+                    guide = guide_legend(reverse = TRUE)) +
+  labs(fill = "Brand")
+```
+
+What else do you notice? Were nets of different textiles distributed evenly throughout the country? Were they concentrated in certain regions?
+
+```{r textile_ov_region}
+df %>% 
+  group_by(hv024) %>% 
+    ggplot(aes(x=hv024,
+             fill = textile)) +
+  geom_bar(position = "fill") +
+  coord_flip() +
+  scale_fill_manual(values = textpal, na.value = "#A9A9A9") +
+  labs(y =  "",
+       x =  "",
+       fill =  "",
+       title =  "Net Textiles")
+                      
+
+```
+
+<h2>Assess the distribution of textiles across co-variates</h2>
+
+```{r textile_over}
+textile_over <- function(column) {
+  column <- sym(column)
+  df %>%
+    group_by(!!column) %>%
+    ggplot(aes(x = !!column,
+               fill = textile)) +
+    geom_bar(position = "fill") +
+    coord_flip() +
+    scale_fill_manual(values = textpal, na.value = "#A9A9A9") +
+    labs(
+      y =  "",
+      x =  "",
+      fill =  "",
+      title =  "Net Textiles"
+    )
+}
+
+```
+
+Are nets of different textiles evenly spread across socioeconomic groups?
+
+```{r textile_over_ses}
+textile_over("hv270")
+
+```
+
+Are nets of different textiles evenly spread across urban/rural settings?
+
+```{r textile_over_urb}
+textile_over("hv025")
+
+```
+
+Are nets of a certain textile uniformly older than the other textile? For example, if most nets in the last campaign were polyester, and nets from the campaign before that were polyethylene, we would expect to see differences in net use due to the age of the net (older nets are worn out, and used less), which would be confounded with the textile.
+
+```{r textile_over_age}
+textile_over("netagegr")
+```
+
+Are nets of different textiles evenly represented across the months the survey was conducted?
+
+```{r textile_over_month}
+textile_over("hv006") +
+  scale_x_discrete(limits = month.abb)
+```
+
+Are nets of different textiles evenly represented across household net supply?
+
+```{r textile_over_supply}
+textile_over("netsupply")
+```
 
 
 ## French
 
-<h1>"Canevas d'analyse pour evaluer l'association entre des preferences du tissu et l''utilisation des moustiquaires impregnées d'insecticide: `r params$country`"</h1>
+<h1>Canevas d'analyse pour evaluer l'association entre des preferences du tissu et l''utilisation des moustiquaires impregnées d'insecticide: `r params$country`</h1>
 
 Les moustiquaires imprégnées d'insecticide sont le premier outil des efforts de lutte contre le paludisme dans le monde. Plus de 2 milliards de MII ont été distribuées aux personnes à risque de paludisme au cours des deux dernières décennies. Alors que la plupart des MII sont utilisées pour la prévention du paludisme, certaines lacunes subsistent dans leur utilisation. Des rapports anecdotiques et des observations qualitatives ont indiqué que dans certaines endroits, les ménages peuvent préférer les MII en polyester plus souples aux MII en polyéthylène, qui peuvent avoir un toucher « plus dur ».
 
@@ -205,11 +412,11 @@ Ce document vise à fournir un cadre d'analyse à l'usage des Programmes Nationa
 <h1> Résumé de l'approche d'analyse</h1>
 
 1. Évaluer la disponibilité des données pour l'analyse, y compris
-    - exhaustivité des informations sur la marque, afin de déterminer le textile
-    - ITN utilise la variable de résultat, au niveau net
+    - la complétude des informations sur la marque, afin de déterminer le textile
+    - la variable de résultat -- si la moustiquaire a été utilisé la nuit précedente
     - les covariables associées à l'utilisation des MII, y compris la région, le statut socio-économique, rural/urbain, le mois de l'année (pour les variations saisonnières), l'âge de la moustiquaire et si le ménage dispose de MII suffisantes ou insuffisantes pour la taille de sa famille.
 2. Déterminer si les données existantes sont suffisantes pour évaluer l'impact du textile sur l'utilisation des MII
-    - évaluer si les deux textiles sont suffisamment représentés dans les données - minimum de répartition 80/20
+    - évaluer si les deux textiles sont suffisamment représentés dans la base des données - minimum de répartition 80/20
 3. Si oui -- procéder à l'analyse
     - évaluer les associations entre l'utilisation des MII et le textile, ainsi que d'autres covariables, d'abord dans un modèle univarié
     - puis dans un modèle multivarié, prenant en compte idéalement le clustering au sein du ménage
@@ -228,7 +435,7 @@ Ce document vise à fournir un cadre d'analyse à l'usage des Programmes Nationa
 
 3. La variable de résultat sera de savoir si la MII a été utilisée la nuit précédente.
 
-4. De nombreux facteurs au niveau des ménages influencent l'utilisation des MII et doivent être pris en compte dans l'analyse. Ces variables sont presque toujours standard dans MIS/DHS/MICS :
+4. De nombreux facteurs au niveau des ménages influencent l'utilisation des MII et doivent être pris en compte dans l'analyse. Ces variables sont presque toujours standard dans les MIS/DHS/MICS:
 
     - Région
 
@@ -246,13 +453,129 @@ Ce document vise à fournir un cadre d'analyse à l'usage des Programmes Nationa
         - le nombre «juste» de MII, ou
         - «trop» de MII
         
-Examinons d'abord les modèles globaux d'utilisation du net à travers ces covariables, pour avoir une idée de ce qui se passe dans «`r cty`.
+Examinons d'abord la situation globale d'utilisation des MII à travers ces covariables, pour avoir une idée de ce qui se passe dans l'enquête `r cty`.
 
 <h3>Region</h3>
 
-``` {r regionuse}
+``` {r regionusefr}
 pnet("hv024") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
  
+<h3>Mois de l'année (qui peut varier par region)</h3>
+
+```{r monthfr}
+pnet("hv006") +
+  scale_x_discrete(limits = month.abb)
+```
+
+<h3>Urbain/rural</h3>
+
+```{r urbfr}
+pnet("hv025")
+```
+
+<h3>Statut socio-economique</h3>
+
+```{r sesfr}
+pnet("hv270")
+```
+
+<h3>Age de la moustiquaire</h3>
+
+```{r agefr}
+pnet("netagegr")
+```
+
+<h2>Évaluer les informations sur les marques d'ITN</h2>
+
+Ensuite, nous devons évaluer les données disponibles pour la marque d'ITN dans l'enquête. A partir de la marque, nous pouvons déterminer si le textile est en polyester ou en polyéthylène. Une variable textile peut être créée en utilisant le tableau suivant comme guide. Notez que dans de nombreux ensembles de données, les noms de marque des ITN sont orthographiés différemment que ci-dessous ou peuvent avoir des fautes d'orthographe.
+
+```{r brandtextilefr, echo=FALSE, message=FALSE, warning=FALSE}
+bt
+```
+
+Pour combien de moustiquaires l'information sur la marque est-elle manquante ou inconnue ?
+
+``` {r missingplotfr}
+
+df %>%
+  ggplot(aes(x='',
+             fill = as.factor(brandclean))) +
+  geom_bar(position = "fill") +
+  coord_flip() +
+  scale_fill_manual(values = brandpal,
+                    limits=force,
+                    guide = guide_legend(reverse = TRUE)) +
+  labs(fill = "Marque",
+       x = "",
+       y = "")
+
+```
+
+Ces données manquantes/inconnues sont-elles réparties uniformément dans tout le pays?
+
+```{r brandunknown_regionfr}
+df %>%
+  group_by(hv024) %>% 
+  ggplot(aes(x=hv024,
+             fill = brandclean)) +
+  geom_bar(position = "fill") +
+  coord_flip() +
+  scale_fill_manual(values = brandpal,
+                    limits=force,
+                    guide = guide_legend(reverse = TRUE)) +
+  labs(fill = "Marque")
+```
+
+Que remarquez-vous d'autre ? Les filets de différents textiles étaient-ils répartis uniformément dans tout le pays ? Étaient-ils concentrés dans certaines régions?
+
+```{r textile_ov_regionfr}
+df %>% 
+  group_by(hv024) %>% 
+    ggplot(aes(x=hv024,
+             fill = textile)) +
+  geom_bar(position = "fill") +
+  coord_flip() +
+  scale_fill_manual(values = textpal, na.value = "#A9A9A9") +
+  labs(y =  "",
+       x =  "",
+       fill =  "",
+       title =  "Textiles des Moustiquaires")
+```
+
+<h2>Évaluer la distribution des textiles à travers les covariables</h2>
+
+Les moustiquaires de différents textiles sont-ils uniformément répartis sur les groupes socioeconomiques?
+
+```{r textile_over_sesfr}
+textile_over("hv270")
+
+```
+
+Les moustiquaires de différents textiles sont-ils uniformément répartis dans les milieux urbains/ruraux?
+
+```{r textile_over_urbfr}
+textile_over("hv025")
+
+```
+
+Les moustiquaires d'un certain textile sont-ils uniformément plus anciens que l'autre textile ? Par exemple, si la plupart des moustiquaires de la dernière campagne étaient en polyester et que les moustiquaires de la campagne précédente étaient en polyéthylène, nous nous attendrions à voir des différences dans l'utilisation des moustiquaires en raison de l'âge de la moustiquaire (les moustiquaires plus anciennes sont usées et moins utilisées), qui se confondrait avec le textile.
+
+```{r textile_over_agefr}
+textile_over("netagegr")
+```
+
+Les moustiquaires de différents textiles sont-ils uniformément représentés au cours des mois où l'enquête a été menée ?
+
+```{r textile_over_monthfr}
+textile_over("hv006") +
+  scale_x_discrete(limits = month.abb)
+```
+
+Les moustiquaires de différents textiles sont-elles uniformément représentées dans l'offre nette des ménages ?
+
+```{r textile_over_supplyfr}
+textile_over("netsupply")
+```
