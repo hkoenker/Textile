@@ -17,8 +17,8 @@ header-includes:
 mainfont: "Times New Roman"
 monofont: "Monaco"
 params: 
-  country: Benin # default
-  netfile: BJHR71_netfile.dta # default
+  country: Tanzania # default
+  netfile: TZHR7Q_netfile.dta # default
 title: "`r params$country`: Effect of textile on net use"
 editor_options:
   chunk_output_type: console
@@ -406,11 +406,11 @@ What proportion of households own nets of both textiles? Are households that own
 # collapse by hhid 
 ob <- df %>% 
   group_by(hhid, hv270) %>% 
-  summarize(obm = mean(ownbothtxt))
+  summarize(obm = survey_mean(ownbothtxt))
 
 ob %>% 
   group_by(hv270) %>% 
-  summarize(mn = mean(obm)*100) %>% 
+  summarize(mn = survey_mean(obm)*100) %>% 
   ggplot(aes(y=mn, x = hv270)) +
   geom_col(fill = "thistle") +
   ylim(0, 100) +
@@ -424,10 +424,10 @@ ob %>%
  
 obe <- df %>% 
   group_by(hhid) %>% 
-  summarize(obe = mean(ownbothtxt))
+  summarize(obe = survey_mean(ownbothtxt))
 
 obmn <- obe %>% 
-  summarize(obn = round(mean(obe)*100,2)) %>% 
+  summarize(obn = round(survey_mean(obe)*100,2)) %>% 
   pull()
   
 
