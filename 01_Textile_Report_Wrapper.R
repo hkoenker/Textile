@@ -56,7 +56,16 @@ purrr::walk(textile_cty_list, function(file_info) {
   country <- file_info$country
   rmarkdown::render(
     "07_Transl_Textile_Template.Rmd",
-    output_file = paste0("../TextileReports/files/",country, "_Textile_Report.html"),
-    params = list(netfile = netfile, country=country),
-    envir = parent.frame())
+    output_file = paste0(
+      "../TextileReports/files/",
+      country,
+      "_Textile_Report.html"
+    ),
+    params = list(netfile = netfile, country = country),
+    envir = parent.frame()
+  )
 })
+
+# install.packages("beepr")
+library(beepr)
+beep(sound = 1)

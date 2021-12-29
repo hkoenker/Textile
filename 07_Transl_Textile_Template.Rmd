@@ -42,6 +42,7 @@ library(jtools)
 library(ggstance)
 library(dotwhisker)
 library(tinylabels)
+library(purrr)
 theme_set(theme_classic())
 
 # The main title of the document won’t be translated here, but we can include a heading for each tab which will be translated. To achieve this we need to use HTML heading tags e.g. <h1> as if we try to use standard R Markdown # this will break the tabbing.
@@ -404,13 +405,13 @@ What proportion of households own nets of both textiles? Are households that own
 
 ```{r within_hh, message=FALSE, warning=FALSE}
 # collapse by hhid 
-ob <- df %>% 
+ob <- survey_design %>% 
   group_by(hhid, hv270) %>% 
   summarize(obm = survey_mean(ownbothtxt))
 
 ob %>% 
   group_by(hv270) %>% 
-  summarize(mn = survey_mean(obm)*100) %>% 
+  summarize(mn = mean(obm)*100) %>% 
   ggplot(aes(y=mn, x = hv270)) +
   geom_col(fill = "thistle") +
   ylim(0, 100) +
@@ -422,12 +423,12 @@ ob %>%
       title =  "Households owning both PE and PET nets"
     )
  
-obe <- df %>% 
+obe <- survey_design %>% 
   group_by(hhid) %>% 
   summarize(obe = survey_mean(ownbothtxt))
 
 obmn <- obe %>% 
-  summarize(obn = round(survey_mean(obe)*100,2)) %>% 
+  summarize(obn = round(mean(obe)*100,2)) %>% 
   pull()
   
 
@@ -946,25 +947,25 @@ use_over("netsupply")
 
 <h1>Évaluer l'association entre l'utilisation de la moustiquaire et son textile, en contrôlant les covariables</h1>
 
-Après avoir examiné les modèles d'utilisation des moustiquaires par le textile et les covariables, nous pouvons utiliser des modèles linéaires généralisés pour évaluer les associations entre les covariables et notre variable de résultat pour savoir si une moustiquaire particulière a été utilisée la nuit précédente. Nous pouvons d'abord évaluer les covariables une par une dans un modèle univarié.
+Après avoir examiné les modèles d'utilisation des moustiquaires par le textile et les covariables, nous pouvons utiliser des modèles linéaires généralisés pour évaluer les associations entre les covariables et notre variable de résultat pour savoir si une moustiquaire particulière a été utilisée la nuit précédente. 
 
 ```{r univarfr, message = FALSE}
+# Nous pouvons d'abord évaluer les covariables une par une dans un modèle univarié.
 
-dm %>%
-  select(netu, textile, supply, hv006, hv024, hv025, hv270, netagegr) %>%
-  tbl_uvregression(
-    method = glm,
-    y = netu,
-    method.args = list(family = binomial),
-    exponentiate = TRUE,
-    pvalue_fun = ~style_pvalue(.x, digits = 2)
-  ) 
+# dm %>%
+#   select(netu, textile, supply, hv006, hv024, hv025, hv270, netagegr) %>%
+#   tbl_uvregression(
+#     method = glm,
+#     y = netu,
+#     method.args = list(family = binomial),
+#     exponentiate = TRUE,
+#     pvalue_fun = ~style_pvalue(.x, digits = 2)
+#   ) 
 ```
 
  
-<h3>Modèle multivarié</h3>
- 
-Ensuite, nous pouvons construire le modèle multivarié. Lors du contrôle des facteurs contextuels, le textile est-il associé à des différences significatives dans l'utilisation d'une moustiquaire ?
+
+Nous pouvons construire le modèle multivarié. Lors du contrôle des facteurs contextuels, le textile est-il associé à des différences significatives dans l'utilisation d'une moustiquaire ?
 
 
 ```{r multivarfr, message = FALSE}
