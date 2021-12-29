@@ -584,10 +584,10 @@ use_over("netsupply")
 
 <h1>Assessing the association between net use and textile, controlling for co-variates</h1>
 
-After reviewing the patterns of net use by textile and covariates, we can use generalized linear models to evaluate the associations between covariates and our outcome variable of whether a particular net was used the previous night. We can first assess covariates one by one in a univariate model.
+After reviewing the patterns of net use by textile and covariates, we can use generalized linear models to evaluate the associations between covariates and our outcome variable of whether a particular net was used the previous night. 
 
 ```{r univar, message = FALSE}
-
+# We can first assess covariates one by one in a univariate model.
 # build logistic regression model
 
 # Make dummies in a different dataset
@@ -600,22 +600,21 @@ dm <- df %>%
  
 # mutate(pet = fct_recode(textile,  0 = 2)) %>%
 # Univariate
+# Not survey weighted!!
 
-dm %>%
-  select(netu, textile, supply, hv006, hv024, hv025, hv270, netagegr) %>%
-  tbl_uvregression(
-    method = glm,
-    y = netu,
-    method.args = list(family = binomial),
-    exponentiate = TRUE,
-    pvalue_fun = ~style_pvalue(.x, digits = 2)
-  ) 
+# dm %>%
+#   select(netu, textile, supply, hv006, hv024, hv025, hv270, netagegr) %>%
+#   tbl_uvregression(
+#     method = glm,
+#     y = netu,
+#     method.args = list(family = binomial),
+#     exponentiate = TRUE,
+#     pvalue_fun = ~style_pvalue(.x, digits = 2)
+#   ) 
 ```
 
  
-<h3>Multivariate model</h3>
- 
-Next, we can construct the multivariate model. When controlling for background factors, is textile associated with significant differences in a net being used?
+Below is the multivariate model, which controls for background factors typically associated with net use. Is textile associated with significant differences in a net being used?
 
 
 ```{r multivar, message = FALSE}
