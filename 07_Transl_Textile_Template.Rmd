@@ -620,7 +620,8 @@ Next, we can construct the multivariate model. When controlling for background f
 
 ```{r multivar, message = FALSE}
 # Multivariate
-m1 <- glm(netu ~ textile + supply + hv006 + hv024 + hv025 +hv270 + netagegr, data = dm, family = binomial)
+dsvy <- svydesign(ids=~hv001, weights=~hv005, strata=~hv024, data = df)
+m1 <- svyglm(netu ~ textile + netsupply + hv006 + hv024 + hv025 +hv270 + netagegr, design=dsvy, family = quasibinomial)
 
 # summary(m1)$coefficients
 m1 %>% 
