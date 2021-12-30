@@ -17,8 +17,8 @@ header-includes:
 mainfont: "Times New Roman"
 monofont: "Monaco"
 params: 
-  country: Tanzania # default
-  netfile: TZHR7Q_netfile.dta # default
+  country: DRC # default
+  netfile: DRC18_netfile.dta # default
 title: "`r params$country`: Effect of textile on net use"
 editor_options:
   chunk_output_type: console
@@ -107,7 +107,7 @@ This document aims to provide an analysis framework for use by National Malaria 
     - ITN use outcome variable, at the net level
     - covariates associated with ITN use, including region, socioeconomic status, rural/urban, month of the year (for seasonal variations), age of the net, and whether the household has sufficient or insufficient ITNs for their family size.
 2.  Determine whether existing data is sufficient for assessing the impact of textile on ITN use
-    - assess whether both textiles are sufficiently represented in the data - minimum of 80/20 split
+    - assess whether both textiles are sufficiently represented in the data
 3.  If yes -- proceed with analysis
     - assess associations between ITN use and textile, along with other covariates, first in a univariate model
     - and then in a multivariate model, ideally accounting for clustering within the household
@@ -699,7 +699,7 @@ Ce document vise à fournir un cadre d'analyse à l'usage des Programmes Nationa
     - la variable de résultat -- si la moustiquaire a été utilisé la nuit précedente
     - les covariables associées à l'utilisation des MII, y compris la région, le statut socio-économique, rural/urbain, le mois de l'année (pour les variations saisonnières), l'âge de la moustiquaire et si le ménage dispose de MII suffisantes ou insuffisantes pour la taille de sa famille.
 2. Déterminer si les données existantes sont suffisantes pour évaluer l'impact du textile sur l'utilisation des MII
-    - évaluer si les deux textiles sont suffisamment représentés dans la base des données - minimum de répartition 80/20
+    - évaluer si les deux textiles sont suffisamment représentés dans la base des données
 3. Si oui -- procéder à l'analyse
     - évaluer les associations entre l'utilisation des MII et le textile, ainsi que d'autres covariables, d'abord dans un modèle univarié
     - puis dans un modèle multivarié, prenant en compte idéalement le clustering au sein du ménage
