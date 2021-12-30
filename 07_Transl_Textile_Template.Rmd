@@ -69,8 +69,7 @@ df <- read_dta(paste0("/Users/hannahkoenker/Dropbox/A DHS MIS Datasets/Analysis/
   # change 2: convert variable labels to variable names ----
   #sjlabelled::label_to_colnames() %>% 
  # set_value_labels(textile = c("Polyester" = 1, "Polyethylene" = 2, "Polypropylene" = 3, "Unknown" = 4)) %>% 
-  mutate(wt = wt/1000000,
-         netu = as.numeric(netused),
+  mutate(netu = as.numeric(netused),
          netu = netu-1) 
 
 # rename factor level here, if using mutate it will convert to character, no thanks.
