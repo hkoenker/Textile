@@ -69,12 +69,12 @@ df <- read_dta(paste0("/Users/hannahkoenker/Dropbox/A DHS MIS Datasets/Analysis/
   # change 2: convert variable labels to variable names ----
   #sjlabelled::label_to_colnames() %>% 
  # set_value_labels(textile = c("Polyester" = 1, "Polyethylene" = 2, "Polypropylene" = 3, "Unknown" = 4)) %>% 
-  mutate(wt = hv005/1000000,
+  mutate(wt = wt/1000000,
          netu = as.numeric(netused),
          netu = netu-1) 
 
 # rename factor level here, if using mutate it will convert to character, no thanks.
-levels(df$hv024) <- gsub('[^ -~]', 'e', levels(df$hv024)) 
+levels(df$region) <- gsub('[^ -~]', 'e', levels(df$region)) 
 levels(df$lbrand) <- gsub('[^ -~]', 'e', levels(df$lbrand)) 
 
 
@@ -152,10 +152,10 @@ Let us first review overall net use patterns across these covariates, to get a s
 ```{r totaluse}
 
 survey_design <-  df %>%
-  as_survey_design(ids = hv001, strata = hv024, weights = hv005)
+  as_survey_design(ids = cluster, strata = region, weights = wt)
 
 syv2 <-  survey_design %>% 
-  group_by(hv024) %>% 
+  group_by(region) %>% 
   summarize(netused = survey_mean(netu))
 
 pnet <- function(column) {
@@ -184,7 +184,7 @@ pnet <- function(column) {
 ```
 
 ``` {r regionuse}
-pnet("hv024") +
+pnet("region") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
@@ -192,20 +192,20 @@ pnet("hv024") +
 <h3>Time of year (month of the survey - which can vary by region)</h3>
 
 ```{r month}
-pnet("hv006") +
+pnet("month") +
   scale_x_discrete(limits = month.abb)
 ```
 
 <h3>Urban/Rural Status</h3>
 
 ```{r urb}
-pnet("hv025")
+pnet("residence")
 ```
 
 <h3>Socioeconomic status</h3>
 
 ```{r ses}
-pnet("hv270")
+pnet("ses")
 ```
 
 <h3>Age of the net</h3>
@@ -313,8 +313,8 @@ Is this missing/unknown data evenly distributed throughout the country?
 
 ```{r brandunknown_region}
 df %>%
-  group_by(hv024) %>% 
-  ggplot(aes(x=hv024,
+  group_by(region) %>% 
+  ggplot(aes(x=region,
              fill = brandclean)) +
   geom_bar(position = "fill") +
   coord_flip() +
@@ -328,8 +328,8 @@ What else do you notice? Were nets of different textiles distributed evenly thro
 
 ```{r textile_ov_region}
 df %>% 
-  group_by(hv024) %>% 
-    ggplot(aes(x=hv024,
+  group_by(region) %>% 
+    ggplot(aes(x=region,
              fill = textile)) +
   geom_bar(position = "fill") +
   coord_flip() +
@@ -367,14 +367,14 @@ textile_over <- function(column) {
 Are nets of different textiles evenly spread across socioeconomic groups?
 
 ```{r textile_over_ses}
-textile_over("hv270")
+textile_over("ses")
 
 ```
 
 Are nets of different textiles evenly spread across urban/rural settings?
 
 ```{r textile_over_urb}
-textile_over("hv025")
+textile_over("residence")
 
 ```
 
@@ -387,7 +387,7 @@ textile_over("netagegr")
 Are nets of different textiles evenly represented across the months the survey was conducted?
 
 ```{r textile_over_month}
-textile_over("hv006") +
+textile_over("month") +
   scale_x_discrete(limits = month.abb)
 ```
 
@@ -406,13 +406,13 @@ What proportion of households own nets of both textiles? Are households that own
 ```{r within_hh, message=FALSE, warning=FALSE}
 # collapse by hhid 
 ob <- survey_design %>% 
-  group_by(hhid, hv270) %>% 
+  group_by(hhid, ses) %>% 
   summarize(obm = survey_mean(ownbothtxt))
 
 ob %>% 
-  group_by(hv270) %>% 
+  group_by(ses) %>% 
   summarize(mn = mean(obm)*100) %>% 
-  ggplot(aes(y=mn, x = hv270)) +
+  ggplot(aes(y=mn, x = ses)) +
   geom_col(fill = "thistle") +
   ylim(0, 100) +
   theme(legend.position = "none") +
@@ -478,15 +478,15 @@ survey_design %>%
 ```{r fun_useover}
 
 survey_design %>%
-  group_by(hv024, textile) %>%
+  group_by(region, textile) %>%
   summarise(m = round(survey_mean(netu) * 100, 1)) %>%
   ggplot(aes(y = m,
-             x = hv024,
+             x = region,
              fill = textile)) +
   geom_col(position = "dodge") +
   geom_errorbar(
     aes(
-      x = hv024,
+      x = region,
       ymin = m - m_se,
       ymax = m + m_se
     ),
@@ -546,7 +546,7 @@ Does use of nets by textile look different over rural/urban?
 
 
 ```{r useover_urban}
-use_over("hv025")
+use_over("residence")
 ```
 
 
@@ -554,7 +554,7 @@ Does use of nets by textile look different over socioeconomic status?
 
 
 ```{r useover_ses}
-use_over("hv270")
+use_over("ses")
 ```
 
 
@@ -562,7 +562,7 @@ Does use of nets by textile look different over month of the year?
 
 
 ```{r useover_month}
-use_over("hv006") +
+use_over("month") +
   scale_x_discrete(limits = month.abb)
   
 ```
@@ -594,7 +594,7 @@ After reviewing the patterns of net use by textile and covariates, we can use ge
 # Make dummies in a different dataset
 
 dm <- df %>%
-  select(netu, textile, netsupply, hv006, hv024, hv025, hv270, netagegr, hv001, hhid) %>%
+  select(netu, textile, netsupply, month, region, residence, ses, netagegr, cluster, hhid) %>%
   mutate(supply = fct_recode(netsupply,
                              "enough" = "just right",
                              "enough" = "too many"))
@@ -604,7 +604,7 @@ dm <- df %>%
 # Not survey weighted!!
 
 # dm %>%
-#   select(netu, textile, supply, hv006, hv024, hv025, hv270, netagegr) %>%
+#   select(netu, textile, supply, month, region, residence, ses, netagegr) %>%
 #   tbl_uvregression(
 #     method = glm,
 #     y = netu,
@@ -620,8 +620,8 @@ Below is the multivariate model, which controls for background factors typically
 
 ```{r multivar, message = FALSE}
 # Multivariate
-dsvy <- svydesign(ids=~hv001, weights=~hv005, strata=~hv024, data = df)
-m1 <- svyglm(netu ~ textile + netsupply + hv006 + hv024 + hv025 +hv270 + netagegr, design=dsvy, family = quasibinomial)
+dsvy <- svydesign(ids=~cluster, weights=~wt, strata=~region, data = df)
+m1 <- svyglm(netu ~ textile + netsupply + month + region + residence +ses + netagegr, design=dsvy, family = quasibinomial)
 
 # summary(m1)$coefficients
 m1 %>% 
@@ -742,7 +742,7 @@ Examinons d'abord la situation globale d'utilisation des MII à travers ces cova
 <h3>Region</h3>
 
 ``` {r regionusefr}
-pnet("hv024") +
+pnet("region") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
@@ -750,20 +750,20 @@ pnet("hv024") +
 <h3>Mois de l'année (qui peut varier par region)</h3>
 
 ```{r monthfr}
-pnet("hv006") +
+pnet("month") +
   scale_x_discrete(limits = month.abb)
 ```
 
 <h3>Urbain/rural</h3>
 
 ```{r urbfr}
-pnet("hv025")
+pnet("residence")
 ```
 
 <h3>Statut socio-economique</h3>
 
 ```{r sesfr}
-pnet("hv270")
+pnet("ses")
 ```
 
 <h3>Age de la moustiquaire</h3>
@@ -802,8 +802,8 @@ Ces données manquantes/inconnues sont-elles réparties uniformément dans tout 
 
 ```{r brandunknown_regionfr}
 df %>%
-  group_by(hv024) %>% 
-  ggplot(aes(x=hv024,
+  group_by(region) %>% 
+  ggplot(aes(x=region,
              fill = brandclean)) +
   geom_bar(position = "fill") +
   coord_flip() +
@@ -817,8 +817,8 @@ Que remarquez-vous d'autre ? Les filets de différents textiles étaient-ils ré
 
 ```{r textile_ov_regionfr}
 df %>% 
-  group_by(hv024) %>% 
-    ggplot(aes(x=hv024,
+  group_by(region) %>% 
+    ggplot(aes(x=region,
              fill = textile)) +
   geom_bar(position = "fill") +
   coord_flip() +
@@ -834,14 +834,14 @@ df %>%
 Les moustiquaires de différents textiles sont-ils uniformément répartis sur les groupes socioeconomiques?
 
 ```{r textile_over_sesfr}
-textile_over("hv270")
+textile_over("ses")
 
 ```
 
 Les moustiquaires de différents textiles sont-ils uniformément répartis dans les milieux urbains/ruraux?
 
 ```{r textile_over_urbfr}
-textile_over("hv025")
+textile_over("residence")
 
 ```
 
@@ -854,7 +854,7 @@ textile_over("netagegr")
 Les moustiquaires de différents textiles sont-ils uniformément représentés au cours des mois où l'enquête a été menée ?
 
 ```{r textile_over_monthfr}
-textile_over("hv006") +
+textile_over("month") +
   scale_x_discrete(limits = month.abb)
 ```
 
@@ -900,9 +900,9 @@ survey_design %>%
 
 L'utilisation des moustiquaires par textile est-elle différente par region ?
 
-```{r useover_hv024fr}
+```{r useover_regionfr}
 
-use_over("hv024")
+use_over("region")
 
 ```
 
@@ -911,21 +911,21 @@ L'utilisation des moustiquaires par textile est-elle différente par milieu rura
 
 
 ```{r useover_urbanfr}
-use_over("hv025")
+use_over("residence")
 ```
 
 
 L'utilisation des moustiquaires par le textile est-elle différente selon le statut socio-économique ?
 
 ```{r useover_sesfr}
-use_over("hv270")
+use_over("ses")
 ```
 
 
 L'utilisation des moustiquaires par textile est-elle différente au cours du mois de l'année ?
 
 ```{r useover_monthfr}
-use_over("hv006") +
+use_over("month") +
   scale_x_discrete(limits = month.abb)
   
 ```
@@ -953,7 +953,7 @@ Après avoir examiné les modèles d'utilisation des moustiquaires par le textil
 # Nous pouvons d'abord évaluer les covariables une par une dans un modèle univarié.
 
 # dm %>%
-#   select(netu, textile, supply, hv006, hv024, hv025, hv270, netagegr) %>%
+#   select(netu, textile, supply, month, region, residence, ses, netagegr) %>%
 #   tbl_uvregression(
 #     method = glm,
 #     y = netu,
