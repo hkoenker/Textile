@@ -17,8 +17,8 @@ header-includes:
 mainfont: "Times New Roman"
 monofont: "Monaco"
 params: 
-  country: DRC # default
-  netfile: DRC18_netfile.dta # default
+  country: Chad # default
+  netfile: TCH19_netfile.dta # default
 title: "`r params$country`: Effect of textile on net use"
 editor_options:
   chunk_output_type: console
@@ -620,7 +620,7 @@ Below is the multivariate model, which controls for background factors typically
 ```{r multivar, message = FALSE}
 # Multivariate
 dsvy <- svydesign(ids=~cluster, weights=~wt, strata=~region, data = df)
-m1 <- svyglm(netu ~ textile + netsupply + month + region + residence +ses + netagegr, design=dsvy, family = quasibinomial)
+m1 <- svyglm(netu ~ textile + netsupply + month + region + residence + ses + netagegr, design=dsvy, family = quasibinomial)
 
 # summary(m1)$coefficients
 m1 %>% 
