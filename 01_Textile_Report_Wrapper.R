@@ -8,7 +8,7 @@ library(beepr)
 textile_cty_list <- list(
   # list(netfile="AOHR71_netfile.dta", country="Angola"),
   # list(netfile="BJHR71_netfile.dta", country="Benin"),
-  list(netfile="BFHR81_netfile.dta", country="Burkina Faso"),
+  list(netfile="BFHR81_netfile.dta", country="Burkina Faso")
   # list(netfile="BFHR81_netfile.dta", country="Burkina Faso 2022"),
   # list(netfile="BFHR7A_netfile.dta", country="Burkina Faso 2018"),
   # list(netfile="BFHR70_netfile.dta", country="Burkina Faso 2014"),
