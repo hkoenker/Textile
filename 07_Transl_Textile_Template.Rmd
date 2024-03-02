@@ -17,8 +17,8 @@ header-includes:
 mainfont: "Times New Roman"
 monofont: "Monaco"
 params: 
-  country: Chad # default
-  netfile: TCH19_netfile.dta # default
+  country: Tanzania # default
+  netfile: TZHR81_netfile.dta # default
 title: "`r params$country`: Effect of textile on net use"
 editor_options:
   chunk_output_type: console
@@ -169,7 +169,7 @@ pnet <- function(column) {
     )) +
     geom_col() +
     scale_fill_brewer(palette = "Set2") +
-    geom_text(aes(label = m, vjust = -0.5)) +
+    geom_text(aes(label = m, vjust = -0.5)) + # , size=3 for Tanzania (31 regions)
     labs(
       y =  "",
       x =  "",
@@ -283,6 +283,8 @@ df <- df %>%
   df %>% count(brandclean, brand) 
 
 df$brandclean[is.na(df$brandclean)] <- "missing"
+
+
 
 df <- df %>% 
   mutate(brandclean = factor(brandclean)) %>% 
@@ -502,6 +504,38 @@ survey_design %>%
   scale_y_continuous(limits = c(0, 100)) +
   scale_fill_manual(values = textpal, na.value = "#A9A9A9") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Facet Version for Tanzania 2022 DHS 
+# survey_design %>%
+#   group_by(region, textile) %>%
+#   summarise(m = round(survey_mean(netu) * 100, 1)) %>%
+#   arrange(region) %>% 
+#   ggplot(aes(y = m,
+#              x = textile,
+#              fill = textile)) +
+#   geom_col(position = "dodge") +
+#   geom_errorbar(
+#     aes(
+#       x = textile,
+#       ymin = m - m_se,
+#       ymax = m + m_se
+#     ),
+#     width = .25,
+#     color = "dimgray",
+#     alpha = .75,
+#     size = .5,
+#     position = position_dodge(width = 0.9)
+#   ) +
+#   geom_text(aes(y=5, x=textile, label=m), position=position_dodge(width=0.9), size=2) +
+#   labs(y =  "",
+#        x =  "",
+#        fill =  "",
+#        title =  "Percentage of nets used") +
+#   scale_y_continuous(limits = c(0, 100)) +
+#   scale_fill_manual(values = textpal, na.value = "#A9A9A9") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1, size=6),
+#         legend.position="bottom") +
+#   facet_wrap(~region, ncol=8)
 
 # geom_text(aes(label = m, vjust = -0.5)) +
 
