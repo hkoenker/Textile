@@ -21,8 +21,8 @@ textile_cty_list <- list(
   # list(netfile="RCI16_netfile.dta", country="Cote d'Ivoire"),
   # list(netfile="CMHR81_netfile.dta", country="Cameroon"),
   # list(netfile="CMHR71_netfile.dta", country="Cameroon"),
-  list(netfile="GHHR82_netfile.dta", country="Ghana 2019"),
-  list(netfile="GHHR8A_netfile.dta", country="Ghana 2022")
+  # list(netfile="GHHR82_netfile.dta", country="Ghana 2019"),
+  # list(netfile="GHHR8A_netfile.dta", country="Ghana 2022")
   # list(netfile="GMHR81_netfile.dta", country="Gambia"),
   # list(netfile="GNHR81_netfile.dta", country="Guinea"),
   # list(netfile="KEHR81_netfile.dta", country="Kenya"),
@@ -33,12 +33,14 @@ textile_cty_list <- list(
   # list(netfile="MLW19_netfile.dta", country="Malawi"),
   # list(netfile="MRHR71_netfile.dta", country="Mauritania"),
   # list(netfile="MZHR7A_netfile.dta", country="Mozambique"),
+  list(netfile="MZHR81_netfile.dta", country="Mozambique"),
   # list(netfile="NGHR7A_netfile.dta", country="Nigeria"),
   # list(netfile="NGHR81_netfile.dta", country="Nigeria"),
   # list(netfile="RWHR81_netfile.dta", country="Rwanda"),
   # list(netfile="STP19_netfile.dta", country="Sao Tome & Principe"),
   # list(netfile="SNHR8A_netfile.dta", country="Senegal"),
   # list(netfile="SNHR8I_netfile.dta", country="Senegal")
+  list(netfile="SNHR8R_netfile.dta", country="Senegal")
   # list(netfile="TCH19_netfile.dta", country="Chad"),
   # list(netfile="TGHR71_netfile.dta", country="Togo"),
   # list(netfile="TZHR81_netfile.dta", country="Tanzania 2022")
